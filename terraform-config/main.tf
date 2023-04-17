@@ -6,7 +6,7 @@ resource "aws_key_pair" "mac-key" {
 
 # Create a security group
 resource "aws_security_group" "standard_access" {
-  name_prefix = "example-sg"
+  name_prefix = "jenky-flask-ssh"
   description = "Allows ssh, jenkins, flask access"
 
   # Inbound rule to allow SSH access from any IP address
@@ -45,6 +45,19 @@ resource "aws_instance" "my_vm" {
 
   # Associate the instance with the keypair we created
   key_name = aws_key_pair.mac-key.id
+
+  user_data = <<-EOL
+  #!/bin/bash -xe
+
+  apt update
+  apt install openjdk-8-jdk --yes
+  wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
+  echo "deb https://pkg.jenkins.io/debian binary/" >> /etc/apt/sources.list
+  apt update
+  apt install -y jenkins
+  systemctl status jenkins
+  find /usr/lib/jvm/java-1.8* | head -n 3  
+  EOL
 
   tags = {
     Name = "My EC2 instance"
